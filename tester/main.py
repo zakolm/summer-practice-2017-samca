@@ -16,6 +16,6 @@ if rc:
     algorithm_lee(field_robot, count_W, count_H)
 #print(field)
 else:
-    file = open('file.txt', 'w')
+    file = open('f_out.txt', 'w')
     file.write('Incorrect input data')
     #print('Incorrect input data')

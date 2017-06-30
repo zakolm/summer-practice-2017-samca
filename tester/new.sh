@@ -2,7 +2,7 @@
 for i in {1..6}
 do
 	if [ ! -f file_$i.txt ]
-		then echo Файла file_$i.txt не существует
+		then echo Файла file_$i.txt не существует; rm file.txt
 		else cat file_$i.txt > file.txt
 	fi
 	python3 main.py

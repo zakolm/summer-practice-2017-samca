@@ -19,7 +19,7 @@ def file(name):
             count_W += 1
         return True, field, count_W, count_H
     else:
-        print('File does not exist\n')
+        #print('File does not exist\n')
         #FILE.write('File does not exist\n')
         return False, -1, -1, -1
 
