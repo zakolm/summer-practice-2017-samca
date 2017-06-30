@@ -77,7 +77,7 @@ def algorithm_lee(field, count_W, count_H):
         
     t2 = time.clock() - t1 # остановка секундомера
     #display(MAP)
-    print('Время распространения волны = {:5.6f} секунд '. format(t2))
+    #print('Время распространения волны = {:5.6f} секунд '. format(t2))
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # ~~~~~~~~~~~~~~~~Восстановление волны~~~~~~~~~~~
@@ -111,8 +111,13 @@ def algorithm_lee(field, count_W, count_H):
                 t = MAP[y+1][x]
                 WAY[y+1][x] = '@'
                 y += 1
-                
+
+        file = open('f_out.txt', 'w')        
         #display(WAY)
+        for i in range(len(WAY)):
+            for j in range(len(WAY[i])):
+                file.write(WAY[i][j])
+            file.write('\n')
 
 
 #------------------------------------------------------------------------------
