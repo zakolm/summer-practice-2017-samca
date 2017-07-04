@@ -221,7 +221,7 @@ def btn_save_map():
     if check_exist_begin_end():
         MAP = grid_to_array()
         sa = asksaveasfilename()
-        file = open(sa + '.txt', 'w')
+        file = open(sa + '.botmap', 'w')
         for r in range(nr):
             for c in range(nc):
                 file.write(str(MAP[r][c]))
@@ -244,7 +244,7 @@ def btn_load_map():
     # сохраняем карту в матрицу
     MAP = []
     nr = -1
-    op = askopenfilename()
+    op = askopenfilename(defaultextension = ".botmap", filetypes= [('BOTMAP arrays', '.botmap')])
     for line in fileinput.input(op):
         nr += 1
         MAP.append([])
@@ -381,7 +381,7 @@ def  btn_generate_map():
     global track_is_painted; track_is_painted = False
     array_to_grid()
 
-
+# кнопка старт
 def btn_start_moving():
     if check_exist_begin_end():
         global track_is_painted; track_is_painted = True
@@ -400,12 +400,19 @@ def btn_start_moving():
         # составляем команды
         track, exist = wave_algorithm(field, nr, nc)
         if exist:
-            commands = list_of_commands(track, nr, nc, start_i, start_j, finish_i, finish_j)            
+            commands = list_of_commands(track, nr, nc, start_i, start_j, finish_i, finish_j)
+            root.text_status.insert(1.0, array_of_int_to_string(commands))
         else:
             box.showinfo("Ошибка", "Невозможно проложить путь. \nПуть полностью ограждён!")
     else:
         box.showinfo("Ошибка", "Невозможно проложить путь. \nУкажите начальную и конечную точку маршрута!")
     canv.bind('<Button-1>', pass_click)
+
+def array_of_int_to_string(array):
+    string = ''
+    for i in range(len(array)):
+        string += str(array[i]) + ' '
+    return string
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~Расположение элементов~~~~~~~~~~~
@@ -472,9 +479,29 @@ root.lbl_status.place(x = 800, y = 20)
 root.text_status = Text(root, height = 15, width = 25, font = 'Arial 14', wrap = WORD)
 root.text_status.place(x = 700, y = 60)
 
+# кнопка вперёд
+root.btn_start = Button(root, width = 4, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12')# command = btn_start_moving)
+root.btn_start.place(x = 815, y = 430)
+
+# кнопка назад
+root.btn_start = Button(root, width = 4, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12')# command = btn_start_moving)
+root.btn_start.place(x = 815, y = 465)
+
+# кнопка направо
+root.btn_start = Button(root, width = 4, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12')# command = btn_start_moving)
+root.btn_start.place(x = 864, y = 465)
+
+# кнопка налево
+root.btn_start = Button(root, width = 4, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12')# command = btn_start_moving)
+root.btn_start.place(x = 766, y = 465)
+
 # кнопка старт
-root.btn_start = Button(root, text = "Старт", width = 22, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_start_moving)
-root.btn_start.place(x = 700, y = 500)
+root.btn_start = Button(root, text = "Старт", width = 9, height = 2, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_start_moving)
+root.btn_start.place(x = 745, y = 520)
+
+# кнопка стоп
+root.btn_start = Button(root, text = "Стоп", width = 9, height = 2, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12') #command = btn_start_moving)
+root.btn_start.place(x = 845, y = 520)
 
 # холст
 canv = Canvas(root, width = 650, height = 380,  bd = 0, relief = "ridge")
