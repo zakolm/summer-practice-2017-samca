@@ -5,19 +5,20 @@ import fileinput
 import random
 import copy
 
-from wave_algorithm import *
+from data_processing import *
+
+cell_size = 34 # размер клетки
+
+x0 = 5 # отступ от левого края
+y0 = 5 # отступ от вернего края
+
+start_is_painted = False
+finish_is_painted = False
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~Обработка событий~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-cell_size = 34 # размер клетки
-
-x0 = 5# отступ от левого края
-y0 = 5 # отступ от вернего края
-
-start_is_painted = False
-finish_is_painted = False
 # класс одной клетки
 class Cell():
     def __init__(self, r, c): # при создании указываем номер строки и столбца
@@ -65,22 +66,19 @@ def btn_create_grid():
                     nr = 4
                     root.entry_height.delete(0, last = END)
                     root.entry_height.insert(0, str(nr))
-                
                 elif nr > 11:
                     nr = 11
                     root.entry_height.delete(0, last = END)
                     root.entry_height.insert(0, str(nr))
-                    
                 if nc < 4:
                     nc = 4
                     root.entry_length.delete(0, last = END)
                     root.entry_length.insert(0, str(nc)) 
-
                 elif nc > 19:
                     nc = 19
                     root.entry_length.delete(0, last = END)
-                    root.entry_length.insert(0, str(nc)) 
-                
+                    root.entry_length.insert(0, str(nc))
+                    
             # создаём двумерный массив из объектов класса клетки и рисуем объекты
             a = []
             for r in range(nr): 
@@ -89,7 +87,6 @@ def btn_create_grid():
                     a[r].append(Cell(r, c))    
             # возможность добавления преграды сразу после создания сетки
             canv.bind('<Button-1>', click_add_block)    
-
         except:
             box.showinfo("Ошибка", "Невозможно создать карту. \nУкажите длину и ширину карты целыми арабскими числами!")
 
@@ -205,7 +202,7 @@ def change_color(row, column, color1, color2):
     elif a[row][column].color == color1:
         a[row][column].color = color2
     a[row][column].paint()
-
+    
 # преобразовать нарисованную сетку в матрицу
 def grid_to_array():
     MAP = [[0] * nc for r in range(nr)]
@@ -260,7 +257,7 @@ def btn_load_map():
 
     root.entry_height.insert(0, str(nr))
     root.entry_length.insert(0, str(nc))
-    #print(MAP)
+    # отрисовка карты на сетке
     array_to_grid()
 
 # преобразование матрицы в сетку
@@ -290,7 +287,7 @@ def btn_do_track():
     if check_exist_begin_end():
         global track_is_painted; track_is_painted = True
         field = grid_to_array()
-        track, exist = algorithm_lee(field, nr, nc)
+        track, exist = wave_algorithm(field, nr, nc)
         if exist:
             for r in range(nr):
                 for c in range(nc):
@@ -307,6 +304,7 @@ def btn_do_track():
 # пустой клик, чтобы не допускать редактирование после построения маршрута
 def pass_click(event):
     pass
+
 # удалить, если есть маршрут
 def check_track():
     global track_is_painted
@@ -342,13 +340,13 @@ def display(array):
         print()
     print()              
 
-# Кнопка сгенерировать карту.  
+# кнопка сгенерировать карту.  
 def  btn_generate_map():
-    # Очистка.  
+    # очистка.  
     canv.delete("all")
     root.entry_height.delete(0, last = END)
     root.entry_length.delete(0, last = END)
-    # Заполнение карты рандомно.  
+    # заполнение карты рандомно.  
     exist = False
     global nr, nc;
     nr = random.randint(4,11); nc = random.randint(4,19)
@@ -364,7 +362,7 @@ def  btn_generate_map():
         d = random.randint(0,nc-1)
         if (a != c or b != d):
             data1[a][b] = 2; data1[c][d] = 3
-            track, exist = algorithm_lee(data1, nr, nc)
+            track, exist = wave_algorithm(data1, nr, nc)
     data[a][b] = 2; data[c][d] = 3
     # Не знаю почему с массивом не работает. Потом еще посмотреть!  
     '''for i in range(4):
@@ -382,75 +380,106 @@ def  btn_generate_map():
     global finish_is_painted; finish_is_painted = True
     global track_is_painted; track_is_painted = False
     array_to_grid()
+
+
+def btn_start_moving():
+    if check_exist_begin_end():
+        global track_is_painted; track_is_painted = True
+        # преобразуем нарисованное в матрицу
+        field = grid_to_array()
+        # ищем координаты старта и финиша
+        for i in range(nr):
+            for j in range(nc):
+                if field[i][j] == 2:
+                    start_i = i
+                    start_j = j
+                if field[i][j] == 3:
+                    finish_i = i
+                    finish_j = j
+                    break
+        # составляем команды
+        track, exist = wave_algorithm(field, nr, nc)
+        if exist:
+            commands = list_of_commands(track, nr, nc, start_i, start_j, finish_i, finish_j)            
+        else:
+            box.showinfo("Ошибка", "Невозможно проложить путь. \nПуть полностью ограждён!")
+    else:
+        box.showinfo("Ошибка", "Невозможно проложить путь. \nУкажите начальную и конечную точку маршрута!")
+    canv.bind('<Button-1>', pass_click)
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~Расположение элементов~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def Window():        
-    root = Tk()
+        
+root = Tk()
 
-    root.title("Guide robot")
-    root.geometry('1000x600')
+root.title("Guide robot")
+root.geometry('1000x600')
 
 # кнопка проложить путь
-    root.btn_track = Button(root, text = 'Проложить путь', width = 13, height = 3, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_do_track)
-    root.btn_track.place(x = 30, y = 20)
+root.btn_track = Button(root, text = 'Проложить путь', width = 13, height = 3, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_do_track)
+root.btn_track.place(x = 30, y = 20)
 
 # метка высоты
-    root.lbl_height = Label(root, text = "Высота", font = 'arial 10')
-    root.lbl_height.place(x = 200, y = 60)
+root.lbl_height = Label(root, text = "Высота", font = 'arial 10')
+root.lbl_height.place(x = 200, y = 60)
 
 # поле высоты 
-    root.entry_height = Entry(root, width = 6)
-    root.entry_height.place(x = 255, y = 63)
+root.entry_height = Entry(root, width = 6)
+root.entry_height.place(x = 255, y = 63)
 
 # метка длины
-    root.lbl_length = Label(root, text = "Длина", font = 'arial 10')
-    root.lbl_length.place(x = 317, y = 60)
+root.lbl_length = Label(root, text = "Длина", font = 'arial 10')
+root.lbl_length.place(x = 317, y = 60)
 
 # поле длины
-    root.entry_length = Entry(root,  width = 6)
-    root.entry_length.place(x = 365, y = 63)
+root.entry_length = Entry(root,  width = 6)
+root.entry_length.place(x = 365, y = 63)
 
 # кнопка создать новую карту
-    root.btn_new_map = Button(root, text = "Создать новую карту", width = 22, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_create_grid)
-    root.btn_new_map.place(x = 200, y = 20)
+root.btn_new_map = Button(root, text = "Создать новую карту", width = 22, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_create_grid)
+root.btn_new_map.place(x = 200, y = 20)
 
 # кнопка указать начало
-    root.btn_start = Button(root, text = "Указать\n начало", width = 8, height = 2, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 9', command = btn_add_start)
-    root.btn_start.place(x = 200, y = 90)
+root.btn_start = Button(root, text = "Указать\n начало", width = 8, height = 2, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 9', command = btn_add_start)
+root.btn_start.place(x = 200, y = 90)
 
 # кнопка указать конец
-    root.btn_finish = Button(root, text = "Указать\n конец", width = 8, height = 2, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 9', command = btn_add_finish)
-    root.btn_finish.place(x = 270, y = 90)
+root.btn_finish = Button(root, text = "Указать\n конец", width = 8, height = 2, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 9', command = btn_add_finish)
+root.btn_finish.place(x = 270, y = 90)
 
 # кнопка добавить преграду
-    root.btn_border = Button(root, text = "Добавить\n преграду", width = 8, height = 2, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 9', command = btn_add_block)
-    root.btn_border.place(x = 340, y = 90)
+root.btn_border = Button(root, text = "Добавить\n преграду", width = 8, height = 2, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 9', command = btn_add_block)
+root.btn_border.place(x = 340, y = 90)
 
 # кнопка сохранить карту
-    root.btn_save = Button(root, text = "Сохранить карту", width = 15, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 9', command = btn_save_map)
-    root.btn_save.place(x = 200, y = 135)
+root.btn_save = Button(root, text = "Сохранить карту", width = 15, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 9', command = btn_save_map)
+root.btn_save.place(x = 200, y = 135)
 
 # кнопка загрузить карту
-    root.btn_take_map = Button(root, text = "Загрузить карту", width = 22, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_load_map)
-    root.btn_take_map.place(x = 450, y = 20)
+root.btn_take_map = Button(root, text = "Загрузить карту", width = 22, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_load_map)
+root.btn_take_map.place(x = 450, y = 20)
 
 # кнопка сгенерировать карту
-    root.btn_generate = Button(root, text = "Сгенерировать карту", width = 22, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_generate_map)
-    root.btn_generate.place(x = 450, y = 60)
+root.btn_generate = Button(root, text = "Сгенерировать карту", width = 22, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_generate_map)
+root.btn_generate.place(x = 450, y = 60)
 
 # метка статус
-    root.lbl_status = Label(root, text = "Статус", font = 'arial 14')
-    root.lbl_status.place(x = 800, y = 20)
+root.lbl_status = Label(root, text = "Статус", font = 'arial 14')
+root.lbl_status.place(x = 800, y = 20)
 
 # поле статуса
-    root.text_status = Text(root, height = 15, width = 25, font = 'Arial 14', wrap = WORD)
-    root.text_status.place(x = 700, y = 60)
+root.text_status = Text(root, height = 15, width = 25, font = 'Arial 14', wrap = WORD)
+root.text_status.place(x = 700, y = 60)
+
+# кнопка старт
+root.btn_start = Button(root, text = "Старт", width = 22, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_start_moving)
+root.btn_start.place(x = 700, y = 500)
 
 # холст
-    canv = Canvas(root, width = 650, height = 380,  bd = 0, relief = "ridge")
-    canv.place(x = 20, y = 190)
-# запускаем событийный цикл
-    root.mainloop()
+canv = Canvas(root, width = 650, height = 380,  bd = 0, relief = "ridge")
+canv.place(x = 20, y = 190)
 
+# запускаем событийный цикл
+root.mainloop()
 
