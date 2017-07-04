@@ -21,10 +21,12 @@ a = None
 #~~~~~~~~~~~Обработка событий~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+# класс Робота 
 class Robot():
-    def __init__(self, r, c, i, j):
+    # рисование начального состояния
+    def __init__(self, r, c, i, j): 
         self.r = r # номер сторки 
-        self.c = c # номер столбца
+        self.c = c # номер столбца 
         self.color = "blueviolet" # базовый цвет
         if j == c + 1:
             self.turn_right()
@@ -34,54 +36,71 @@ class Robot():
             self.turn_left()
         if i == r + 1:
             self.turn_down()
+        self.paint()
 
-    def move(self, i , j):
-        root.canv.move(trian, i, j)
-
+    # движение по нужному направлению
+    def moves(self):
+        self.paint()
+        if(bot.orient == "l"):
+            self.c -= 1
+            canv.move(self.trian, -cell_size, 0)
+            self.turn_left()
+        elif bot.orient == "r":
+            self.c += 1
+            canv.move(self.trian,cell_size, 0)
+            self.turn_right()
+        elif bot.orient == "u":
+            self.r -= 1
+            canv.move(self.trian, 0, -cell_size)
+            self.turn_up()
+        else:
+            self.r += 1
+            canv.move(self.trian, 0, cell_size)
+            self.turn_down()
+            
+    # удаление элемента робот с канваса      
     def delete(self):
         canv.delete(self.trian)
-       
+
     def turn_left(self):
+        self.orient = "l"
         self.x1 = x0 + self.c * cell_size         
         self.y1 = y0 + self.r * cell_size + cell_size / 2
         self.x2 = self.x1 + cell_size 
         self.y2 = self.y1 - cell_size/2
         self.x3 = self.x2
-        self.y3 = self.y2 + cell_size
-        self.paint()
-        
-        
+        self.y3 = self.y2 + cell_size     
+    
     def turn_right(self):
+        self.orient = "r"
         self.y1 = y0 + self.r * cell_size + cell_size / 2
         self.x1 = x0 + self.c * cell_size + cell_size
         self.y2 = y0 + self.r * cell_size
         self.x2 = x0 + self.c * cell_size
         self.x3 = self.x2
         self.y3 = self.y2 + cell_size
-        self.paint()
         
     def turn_up(self):
+        self.orient = "u"
         self.y1 = y0 + self.r  * cell_size
         self.x1 = x0 + self.c * cell_size + cell_size / 2
         self.y2 = self.y1 + cell_size
         self.x2 = self.x1 - cell_size / 2
         self.y3 = self.y2
         self.x3 = self.x2 +cell_size
-        self.paint()
-    
          
     def turn_down(self):
-        self.y1 = y0 + self.r*cell_size + cell_size
+        self.orient = "d"
+        self.y1 = y0 + self.r *cell_size + cell_size
         self.x1 = x0 + self.c * cell_size + cell_size/2
-        self.y2 = y0 + self.r*cell_size
+        self.y2 = y0 + self.r *cell_size
         self.x2 = self.x1 - cell_size/2
         self.y3 = self.y2
         self.x3 = self.x2 +  cell_size
-        self.paint()
 
     def paint(self):
         self.trian = canv.create_polygon([self.x1, self.y1], [self.x2, self.y2], [self.x3, self.y3], fill = self.color)
-        
+
 
 # класс одной клетки
 class Cell():
@@ -356,7 +375,7 @@ def array_to_grid():
             a[r][c].paint()
 
 # кнопка проложить путь
-def btn_do_track():
+def btn_do_track(event):
     global track_is_painted
     field = grid_to_array()
     track, exist = wave_algorithm(field, nr, nc)
@@ -514,38 +533,72 @@ def array_of_int_to_string(array):
 def btn_start_moving():
     # преобразуем нарисованное в матрицу
     field = grid_to_array()
-    # координаты старта и финиша
-    start_i = row_before_start
-    start_j = column_before_start
-    finish_i = row_before_finish
-    finish_j = column_before_finish
     # составляем команды
     track, exist = wave_algorithm(field, nr, nc)
-    commands = list_of_commands(track, nr, nc, start_i, start_j, finish_i, finish_j)
-    root.text_status.insert(1.0, array_of_int_to_string(commands))  
+    commands = list_of_commands(track, nr, nc, row_before_start, column_before_start, row_before_finish, column_before_finish)
+    root.text_status.insert(1.0, array_of_int_to_string(commands))
+
+    # прокладываем путь по командам
+    for h in commands:
+        if h == 1:
+            bot.moves()
+        # 2 - вправо для робота
+        if h == 2:                             
+            bot.delete()
+            if bot.orient == "u":
+                bot.turn_right()
+            elif bot.orient == "d":
+                bot.turn_left()
+            elif bot.orient == "l":
+                bot.turn_up()
+            else:
+                bot.turn_down()
+            bot.paint()
+        #3 - влево для робота
+        if h == 3:                            
+            bot.delete()
+            if bot.orient == "u":
+                bot.turn_left()
+            elif bot.orient == "d":
+                bot.turn_right()
+            elif bot.orient == "l":
+                bot.turn_down()
+            else:
+                bot.turn_up()
+            bot.paint()
     canv.bind('<Button-1>', pass_click)
 
+# кнопка стоп
 def btn_stop_moving():
     pass
 
+# кнопка вперед
 def btn_move_forward():
     bot.delete()
     bot.turn_up()
+    bot.moves()
 
+# кнопка назад(вниз по карте)  
 def btn_move_back():
     bot.delete()
     bot.turn_down()
+    bot.moves()
 
+# кнопка вправо
 def btn_turn_right():
     bot.delete()
     bot.turn_right()
-
+    bot.moves()
+    
+# кнопка влево
 def btn_turn_left():
     bot.delete()
     bot.turn_left()
-    
+    bot.moves()
 
-    
+# горячая клавиша - выход из программы
+def exit_(event):
+    root.destroy()    
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~Расположение элементов~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -555,9 +608,14 @@ root = Tk()
 root.title("Guide robot")
 root.geometry('1000x600')
 
+# горячая клавиша - выход
+root.bind('<Escape>',exit_)
+
 # кнопка проложить путь
-root.btn_track = Button(root, text = 'Проложить путь', width = 13, height = 3, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_do_track)
+root.btn_track = Button(root, text = 'Проложить путь', width = 13, height = 3, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12')#, command = btn_do_track)
 root.btn_track.place(x = 30, y = 20)
+root.btn_track.bind("<Button>",btn_do_track, "+")
+#root.btn_track.bind("<Return>",btn_do_track, "+")
 
 # метка высоты
 root.lbl_height = Label(root, text = "Высота", font = 'arial 10')
@@ -639,6 +697,7 @@ root.btn_stop.place(x = 845, y = 520)
 canv = Canvas(root, width = 650, height = 380,  bd = 0, relief = "ridge")
 canv.place(x = 20, y = 190)
 
+# начальный статус кнопок
 check_status_buttons()
 
 # запускаем событийный цикл

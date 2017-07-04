@@ -109,9 +109,12 @@ def list_of_commands(track, nr, nc, start_i, start_j, finish_i, finish_j):
     i = start_i
     j = start_j
     # пока не достигнем финиша
+    track[i][j]= '-'
     while i != finish_i or j != finish_j:
+        #display(track)
+        #print(i, j, "                              ",commands)
         # движение вправо
-        if way_forward(track, nr, nc, i, j + 1):
+        if way_forward(track, nr, nc, i, j + 1): 
             while way_forward(track, nr, nc, i, j + 1):
                 commands.append(1)
                 track[i][j + 1] = '-'
@@ -160,9 +163,6 @@ def way_forward(field, nr, nc, i, j):
     and field[i][j] == '@':
         return True
     return False
-
-
-
 
 
 
