@@ -109,6 +109,7 @@ def list_of_commands(track, nr, nc, start_i, start_j, finish_i, finish_j):
     i = start_i
     j = start_j
     # пока не достигнем финиша
+    track[i][j]= '-'
     while i != finish_i or j != finish_j:
         # движение вправо
         if way_forward(track, nr, nc, i, j + 1):
