@@ -101,4 +101,65 @@ def display(array):
     print()
 
 
+#------------------------------------------------------------------------------
+#-------------------------------------Создание команд--------------------------
+#------------------------------------------------------------------------------
+def list_of_commands(track, nr, nc, start_i, start_j, finish_i, finish_j):
+    commands = []
+    i = start_i
+    j = start_j
+    # пока не достигнем финиша
+    while i != finish_i or j != finish_j:
+        # движение вправо
+        if way_forward(track, nr, nc, i, j + 1):
+            while way_forward(track, nr, nc, i, j + 1):
+                commands.append(1)
+                track[i][j + 1] = '-'
+                j += 1
+            if way_forward(track, nr, nc, i + 1, j):
+                commands.append(2)
+            if way_forward(track, nr, nc, i - 1, j):
+                commands.append(3)
+        # движение вверх     
+        if way_forward(track, nr, nc, i - 1, j):
+            while way_forward(track, nr, nc, i - 1, j):
+                commands.append(1)
+                track[i - 1][j] = '-'
+                i -= 1
+            if way_forward(track, nr, nc, i, j + 1):
+                commands.append(2)
+            if way_forward(track, nr, nc, i, j - 1):
+                commands.append(3)
+        # движение влево     
+        if way_forward(track, nr, nc, i, j - 1):
+            while way_forward(track, nr, nc, i, j - 1):
+                commands.append(1)
+                track[i][j - 1] = '-'
+                j -= 1
+            if way_forward(track, nr, nc, i - 1 , j):
+                commands.append(2)
+            if way_forward(track, nr, nc, i + 1, j):
+                commands.append(3)
+        # движение вниз
+        if way_forward(track, nr, nc, i + 1, j):
+            while way_forward(track, nr, nc, i + 1, j):
+                commands.append(1)
+                track[i + 1][j] = '-'
+                i += 1
+            if way_forward(track, nr, nc, i, j - 1):
+                commands.append(2)
+            if way_forward(track, nr, nc, i, j + 1):
+                commands.append(3)
+                
+    return commands
+
+# определение направления движения
+def way_forward(field, nr, nc, i, j):
+    if i >= 0 and i <= nr - 1 \
+    and j >= 0 and j <= nc - 1 \
+    and field[i][j] == '@':
+        return True
+    return False
+
+
 
