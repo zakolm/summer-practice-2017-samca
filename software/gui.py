@@ -14,10 +14,74 @@ y0 = 5 # отступ от вернего края
 
 start_is_painted = False
 finish_is_painted = False
+track_is_painted = False
+a = None
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~Обработка событий~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+class Robot():
+    def __init__(self, r, c, i, j):
+        self.r = r # номер сторки 
+        self.c = c # номер столбца
+        self.color = "blueviolet" # базовый цвет
+        if j == c + 1:
+            self.turn_right()
+        if i == r - 1:
+            self.turn_up()
+        if j == c - 1:
+            self.turn_left()
+        if i == r + 1:
+            self.turn_down()
+
+    def move(self, i , j):
+        root.canv.move(trian, i, j)
+
+    def delete(self):
+        canv.delete(self.trian)
+       
+    def turn_left(self):
+        self.x1 = x0 + self.c * cell_size         
+        self.y1 = y0 + self.r * cell_size + cell_size / 2
+        self.x2 = self.x1 + cell_size 
+        self.y2 = self.y1 - cell_size/2
+        self.x3 = self.x2
+        self.y3 = self.y2 + cell_size
+        self.paint()
+        
+        
+    def turn_right(self):
+        self.y1 = y0 + self.r * cell_size + cell_size / 2
+        self.x1 = x0 + self.c * cell_size + cell_size
+        self.y2 = y0 + self.r * cell_size
+        self.x2 = x0 + self.c * cell_size
+        self.x3 = self.x2
+        self.y3 = self.y2 + cell_size
+        self.paint()
+        
+    def turn_up(self):
+        self.y1 = y0 + self.r  * cell_size
+        self.x1 = x0 + self.c * cell_size + cell_size / 2
+        self.y2 = self.y1 + cell_size
+        self.x2 = self.x1 - cell_size / 2
+        self.y3 = self.y2
+        self.x3 = self.x2 +cell_size
+        self.paint()
+    
+         
+    def turn_down(self):
+        self.y1 = y0 + self.r*cell_size + cell_size
+        self.x1 = x0 + self.c * cell_size + cell_size/2
+        self.y2 = y0 + self.r*cell_size
+        self.x2 = self.x1 - cell_size/2
+        self.y3 = self.y2
+        self.x3 = self.x2 +  cell_size
+        self.paint()
+
+    def paint(self):
+        self.trian = canv.create_polygon([self.x1, self.y1], [self.x2, self.y2], [self.x3, self.y3], fill = self.color)
+        
 
 # класс одной клетки
 class Cell():
@@ -60,39 +124,40 @@ def btn_create_grid():
         try:
             nr = int(height)
             nc = int(length)
-            if( (not 3< nr < 12) or (not 3 < nc < 20)):
-                box.showinfo("Предупреждение", "Невозможно создать карту заданного размера.\nМинимальный размер 4х4!\nМаксимальный размер 11х19 ")
-                if nr < 4:
-                    nr = 4
-                    root.entry_height.delete(0, last = END)
-                    root.entry_height.insert(0, str(nr))
-                elif nr > 11:
-                    nr = 11
-                    root.entry_height.delete(0, last = END)
-                    root.entry_height.insert(0, str(nr))
-                if nc < 4:
-                    nc = 4
-                    root.entry_length.delete(0, last = END)
-                    root.entry_length.insert(0, str(nc)) 
-                elif nc > 19:
-                    nc = 19
-                    root.entry_length.delete(0, last = END)
-                    root.entry_length.insert(0, str(nc))
+        
+            if nr < 4:
+                nr = 4
+                root.entry_height.delete(0, last = END)
+                root.entry_height.insert(0, str(nr))
+            elif nr > 11:
+                nr = 11
+                root.entry_height.delete(0, last = END)
+                root.entry_height.insert(0, str(nr))
+            if nc < 4:
+                nc = 4
+                root.entry_length.delete(0, last = END)
+                root.entry_length.insert(0, str(nc)) 
+            elif nc > 19:
+                nc = 19
+                root.entry_length.delete(0, last = END)
+                root.entry_length.insert(0, str(nc))
                     
             # создаём двумерный массив из объектов класса клетки и рисуем объекты
             a = []
             for r in range(nr): 
                 a.append([])
                 for c in range(nc):
-                    a[r].append(Cell(r, c))    
+                    a[r].append(Cell(r, c))
+            check_status_buttons()
             # возможность добавления преграды сразу после создания сетки
             canv.bind('<Button-1>', click_add_block)    
-        except:
+        except ValueError:
             box.showinfo("Ошибка", "Невозможно создать карту. \nУкажите длину и ширину карты целыми арабскими числами!")
-
+    
 # кнопка добавить преграду
 def btn_add_block():
     check_track()
+    check_status_buttons()
     canv.bind('<Button-1>', click_add_block)
 
 # обрабока клика для добавления преграды
@@ -111,10 +176,12 @@ def click_add_block(event):
         else:
             a[row][column].color = "white"
         a[row][column].paint()
+    check_status_buttons()
 
 # кнопка указать начало
 def btn_add_start():
     check_track()
+    check_status_buttons()
     canv.bind("<Button-1>", click_add_start)
 
 # обработка клика для указания начала
@@ -143,11 +210,13 @@ def click_add_start(event):
             elif a[row][column].color == "limegreen":
                 a[row][column].color = "white"
                 a[row][column].paint()
-                start_is_painted = False   
+                start_is_painted = False
+    check_status_buttons()
 
 # кнопка указать конец
 def btn_add_finish():
     check_track()
+    check_status_buttons()
     canv.bind("<Button-1>", click_add_finish)
     
 # обработка клика для указания конца
@@ -177,6 +246,7 @@ def click_add_finish(event):
                 a[row][column].color = "white"
                 a[row][column].paint()
                 finish_is_painted = False
+    check_status_buttons()
 
 # найти к какому квадрату приналежит клик
 def find_col_row(x, y):
@@ -218,18 +288,15 @@ def grid_to_array():
 
 # кнопка сохранить карту
 def btn_save_map():
-    if check_exist_begin_end():
-        MAP = grid_to_array()
-        sa = asksaveasfilename()
-        file = open(sa + '.botmap', 'w')
-        for r in range(nr):
-            for c in range(nc):
-                file.write(str(MAP[r][c]))
-            file.write('\n')
-        file.close()
-    else:
-        box.showinfo("Ошибка", "Невозможно сохранить карту.\nСоздайте карту с точкой отправки и точкой прибытия перед сохранением.")
- 
+    MAP = grid_to_array()
+    sa = asksaveasfilename()
+    file = open(sa + '.botmap', 'w')
+    for r in range(nr):
+        for c in range(nc):
+            file.write(str(MAP[r][c]))
+        file.write('\n')
+    file.close()
+
  # кнопка загрузить карту
 def btn_load_map():
     global nr, nc
@@ -245,20 +312,26 @@ def btn_load_map():
     MAP = []
     nr = -1
     op = askopenfilename(defaultextension = ".botmap", filetypes= [('BOTMAP arrays', '.botmap')])
-    for line in fileinput.input(op):
+    if op:
+        
+        for line in fileinput.input(op):
+            nr += 1
+            MAP.append([])
+            nc = -1
+            for element in line:
+                nc += 1
+                if element != '\n':
+                    MAP[nr].append(int(element))
         nr += 1
-        MAP.append([])
-        nc = -1
-        for element in line:
-            nc += 1
-            if element != '\n':
-                MAP[nr].append(int(element))
-    nr += 1
 
-    root.entry_height.insert(0, str(nr))
-    root.entry_length.insert(0, str(nc))
-    # отрисовка карты на сетке
-    array_to_grid()
+        root.entry_height.insert(0, str(nr))
+        root.entry_length.insert(0, str(nc))
+        # отрисовка карты на сетке
+        array_to_grid()
+    else:
+        start_is_painted = False
+        finish_is_painted = False
+    check_status_buttons()
 
 # преобразование матрицы в сетку
 def array_to_grid():
@@ -284,23 +357,40 @@ def array_to_grid():
 
 # кнопка проложить путь
 def btn_do_track():
-    if check_exist_begin_end():
-        global track_is_painted; track_is_painted = True
-        field = grid_to_array()
-        track, exist = wave_algorithm(field, nr, nc)
-        if exist:
-            for r in range(nr):
-                for c in range(nc):
-                    if track[r][c] == '@':
-                        if a[r][c].color != 'red' and a[r][c].color != 'limegreen':
-                            a[r][c].color = 'yellow'
-                        a[r][c].paint()
-        else:
-            box.showinfo("Ошибка", "Невозможно проложить путь. \nПуть полностью ограждён!")
+    global track_is_painted
+    field = grid_to_array()
+    track, exist = wave_algorithm(field, nr, nc)
+    if exist:
+        for r in range(nr):
+            for c in range(nc):
+                if track[r][c] == '@':
+                    if a[r][c].color != 'red' and a[r][c].color != 'limegreen':
+                        a[r][c].color = 'yellow'
+                    a[r][c].paint()
+        track_is_painted = True
+        orient_i,  orient_j = starting_position_of_the_robot(track)
+        global bot; bot = Robot(row_before_start, column_before_start, orient_i, orient_j)
     else:
-        box.showinfo("Ошибка", "Невозможно проложить путь. \nУкажите начальную и конечную точку маршрута!")
+        box.showinfo("Ошибка", "Невозможно проложить путь. \nПуть полностью ограждён!")
+    check_status_buttons()
     canv.bind('<Button-1>', pass_click)
 
+# координаты направления робота
+def starting_position_of_the_robot(track):
+    if way_forward(track, nr, nc, row_before_start, column_before_start + 1):
+        orient_i = row_before_start
+        orient_j = column_before_start + 1
+    if way_forward(track, nr, nc, row_before_start - 1, column_before_start):
+        orient_i = row_before_start - 1
+        orient_j = column_before_start 
+    if way_forward(track, nr, nc, row_before_start, column_before_start - 1):
+        orient_i = row_before_start
+        orient_j = column_before_start - 1
+    if way_forward(track, nr, nc, row_before_start + 1, column_before_start):
+        orient_i = row_before_start + 1
+        orient_j = column_before_start
+    return  orient_i,  orient_j
+        
 # пустой клик, чтобы не допускать редактирование после построения маршрута
 def pass_click(event):
     pass
@@ -314,6 +404,7 @@ def check_track():
                 if a[r][c].color == 'yellow':
                     a[r][c].color = 'white'
                     a[r][c].paint()
+        bot.delete()
     track_is_painted = False
     
 # проверка наличия кoнца и начала
@@ -331,6 +422,37 @@ def check_click_in_grid(event):
         return True
     return False
 
+# проверка активности кнопок
+def check_status_buttons():
+    if check_exist_begin_end():
+        root.btn_track.config(state = NORMAL, bg = "dodgerblue")
+        root.btn_save.config(state = NORMAL, bg = "dodgerblue")
+    else:
+        root.btn_track.config(state = DISABLED, bg = "lavender")
+        root.btn_save.config(state = DISABLED, bg = "lavender")
+    if a == None:
+        root.btn_finish.config(state = DISABLED, bg = "lavender")
+        root.btn_border.config(state = DISABLED, bg = "lavender")
+        root.btn_start.config(state = DISABLED, bg = "lavender")
+    else:
+        root.btn_start.config(state = NORMAL, bg = "dodgerblue")
+        root.btn_finish.config(state = NORMAL, bg = "dodgerblue")
+        root.btn_border.config(state = NORMAL, bg = "dodgerblue")
+    if track_is_painted:
+        root.btn_go.config(state = NORMAL, bg = "dodgerblue")
+        root.btn_stop.config(state = NORMAL, bg = "dodgerblue")
+        root.btn_forward.config(state = NORMAL, bg = "dodgerblue")
+        root.btn_back.config(state = NORMAL, bg = "dodgerblue")
+        root.btn_right.config(state = NORMAL, bg = "dodgerblue")
+        root.btn_left.config(state = NORMAL, bg = "dodgerblue")
+    else:
+        root.btn_go.config(state = DISABLED, bg = "lavender")
+        root.btn_stop.config(state = DISABLED, bg = "lavender")
+        root.btn_forward.config(state = DISABLED, bg = "lavender")
+        root.btn_back.config(state = DISABLED, bg = "lavender")
+        root.btn_right.config(state = DISABLED, bg = "lavender")
+        root.btn_left.config(state = DISABLED, bg = "lavender")
+        
 # вывод матрицы
 def display(array):
     print()
@@ -381,39 +503,49 @@ def  btn_generate_map():
     global track_is_painted; track_is_painted = False
     array_to_grid()
 
-# кнопка старт
-def btn_start_moving():
-    if check_exist_begin_end():
-        global track_is_painted; track_is_painted = True
-        # преобразуем нарисованное в матрицу
-        field = grid_to_array()
-        # ищем координаты старта и финиша
-        for i in range(nr):
-            for j in range(nc):
-                if field[i][j] == 2:
-                    start_i = i
-                    start_j = j
-                if field[i][j] == 3:
-                    finish_i = i
-                    finish_j = j
-                    break
-        # составляем команды
-        track, exist = wave_algorithm(field, nr, nc)
-        if exist:
-            commands = list_of_commands(track, nr, nc, start_i, start_j, finish_i, finish_j)
-            root.text_status.insert(1.0, array_of_int_to_string(commands))
-        else:
-            box.showinfo("Ошибка", "Невозможно проложить путь. \nПуть полностью ограждён!")
-    else:
-        box.showinfo("Ошибка", "Невозможно проложить путь. \nУкажите начальную и конечную точку маршрута!")
-    canv.bind('<Button-1>', pass_click)
-
+# массив целых чисел в строку
 def array_of_int_to_string(array):
     string = ''
     for i in range(len(array)):
         string += str(array[i]) + ' '
     return string
 
+# кнопка старт
+def btn_start_moving():
+    # преобразуем нарисованное в матрицу
+    field = grid_to_array()
+    # координаты старта и финиша
+    start_i = row_before_start
+    start_j = column_before_start
+    finish_i = row_before_finish
+    finish_j = column_before_finish
+    # составляем команды
+    track, exist = wave_algorithm(field, nr, nc)
+    commands = list_of_commands(track, nr, nc, start_i, start_j, finish_i, finish_j)
+    root.text_status.insert(1.0, array_of_int_to_string(commands))  
+    canv.bind('<Button-1>', pass_click)
+
+def btn_stop_moving():
+    pass
+
+def btn_move_forward():
+    bot.delete()
+    bot.turn_up()
+
+def btn_move_back():
+    bot.delete()
+    bot.turn_down()
+
+def btn_turn_right():
+    bot.delete()
+    bot.turn_right()
+
+def btn_turn_left():
+    bot.delete()
+    bot.turn_left()
+    
+
+    
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~Расположение элементов~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -480,32 +612,34 @@ root.text_status = Text(root, height = 15, width = 25, font = 'Arial 14', wrap =
 root.text_status.place(x = 700, y = 60)
 
 # кнопка вперёд
-root.btn_start = Button(root, width = 4, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12')# command = btn_start_moving)
-root.btn_start.place(x = 815, y = 430)
+root.btn_forward = Button(root, width = 4, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_move_forward)
+root.btn_forward.place(x = 815, y = 430)
 
 # кнопка назад
-root.btn_start = Button(root, width = 4, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12')# command = btn_start_moving)
-root.btn_start.place(x = 815, y = 465)
+root.btn_back = Button(root, width = 4, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_move_back)
+root.btn_back.place(x = 815, y = 465)
 
 # кнопка направо
-root.btn_start = Button(root, width = 4, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12')# command = btn_start_moving)
-root.btn_start.place(x = 864, y = 465)
+root.btn_right = Button(root, width = 4, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_turn_right)
+root.btn_right.place(x = 864, y = 465)
 
 # кнопка налево
-root.btn_start = Button(root, width = 4, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12')# command = btn_start_moving)
-root.btn_start.place(x = 766, y = 465)
+root.btn_left = Button(root, width = 4, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_turn_left)
+root.btn_left.place(x = 766, y = 465)
 
 # кнопка старт
-root.btn_start = Button(root, text = "Старт", width = 9, height = 2, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_start_moving)
-root.btn_start.place(x = 745, y = 520)
+root.btn_go = Button(root, text = "Старт", width = 9, height = 2, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_start_moving)
+root.btn_go.place(x = 745, y = 520)
 
 # кнопка стоп
-root.btn_start = Button(root, text = "Стоп", width = 9, height = 2, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12') #command = btn_start_moving)
-root.btn_start.place(x = 845, y = 520)
+root.btn_stop = Button(root, text = "Стоп", width = 9, height = 2, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_stop_moving)
+root.btn_stop.place(x = 845, y = 520)
 
 # холст
 canv = Canvas(root, width = 650, height = 380,  bd = 0, relief = "ridge")
 canv.place(x = 20, y = 190)
+
+check_status_buttons()
 
 # запускаем событийный цикл
 root.mainloop()
