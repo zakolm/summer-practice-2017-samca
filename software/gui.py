@@ -521,6 +521,7 @@ def  btn_generate_map():
     global finish_is_painted; finish_is_painted = True
     global track_is_painted; track_is_painted = False
     array_to_grid()
+    check_status_buttons()
 
 # массив целых чисел в строку
 def array_of_int_to_string(array):
