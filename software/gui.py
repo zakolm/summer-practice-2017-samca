@@ -608,6 +608,7 @@ root = Tk()
 
 root.title("Guide robot")
 root.geometry('1000x600')
+root.resizable(width=False, height=False)
 
 # горячая клавиша - выход
 root.bind('<Escape>',exit_)
