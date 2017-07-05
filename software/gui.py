@@ -509,87 +509,41 @@ def  btn_generate_map():
     canv.delete("all")
     root.entry_height.delete(0, last = END)
     root.entry_length.delete(0, last = END)
-    # заполнение карты рандомно.  
-    exist = False
-    nr = random.randint(5,11)
-    nc = random.randint(5,19)
-
-    # закоментирован долгий цикл
-    ''' 
-    distance = 1
-    MAP = [[0] * nc for r in range(nr)]
-    
-    row_before_start = 0
-    column_before_start = 1     
-    row_before_finish = 1
-    column_before_finish = 0
-   
+    # заполнение карты рандомно.
+    iteration = 0
+    max_count = 10
     while True:
-        print(exist, distance)
-        if exist and distance > nr * nc / 4:
-            break
-        
-        #MAP[row_before_start][column_before_start] = 0
-        #MAP[row_before_finish][column_before_finish] = 0
-        distance = 1
-        for i in range(nr):
-            for j in range(nc):
-                MAP[i][j] = randint(0, 1)
-        
-        row_before_start = randint(0, nr - 1)
-        column_before_start = randint(0, nc - 1)
-        
-        row_before_finish = randint(0, nr - 1)
-        column_before_finish = randint(0, nc - 1)
-        
-        MAP[row_before_start][column_before_start] = 2
-        MAP[row_before_finish][column_before_finish] = 3
-        display(MAP)
-        track, exist = wave_algorithm(MAP, nr, nc)
-        
-        if exist:
-            display(track)
-            for i in range(nr):
-                for j in range(nc):
-                    if track[i][j] == '@':
-                        distance += 1
-            
-    array_to_grid()
-    check_status_buttons()
-'''                 
-    nr = random.randint(5,11)
-    nc = random.randint(5,19)
-    data = [random.choice((0, 1)) for _ in range(nc*nr)]
-    data[:] = [data[i:i + nc] for i in range(0, nc*nr, nc)]
-    #points = []#[0 for i in range(4)]
-    #print(nr,nc,'\n',data)
-    while (not exist):
-        data1 = copy.deepcopy(data)
-        a = random.randint(0, nr-1)
-        b = random.randint(0, nc-1)
-        c = random.randint(0, nr-1)
-        d = random.randint(0, nc-1)
-        if (a != c or b != d):
-            data1[a][b] = 2; data1[c][d] = 3
-            track, exist = wave_algorithm(data1, nr, nc)
-    data[a][b] = 2; data[c][d] = 3
-    # Не знаю почему с массивом не работает. Потом еще посмотреть! 
-    '''for i in range(4):
-            if i%2:
-                points.append(random.randint(0,nc-1))
-            else:
-                points.append(random.randint(0,nr-1))
-    if ( points[0] != points[2] or points[1] != points[3] ):
-        data1[points[0]][points[1]] = 2; data1[points[2]][points[3]] = 3
-        track, exist = algorithm_lee(data1, nr, nc)
-    data[points[0]][points[1]] = 2; data[points[2]][points[3]] = 3'''
-    
+        exist = False                
+        nr = random.randint(5,11)
+        nc = random.randint(5,19)
+        data = [random.choice((0, 1)) for _ in range(nc*nr)]
+        data[:] = [data[i:i + nc] for i in range(0, nc*nr, nc)]
+        count = 0
+        while True: 
+            count += 1
+            data1 = copy.deepcopy(data)
+            a = random.randint(0, nr-1)
+            b = random.randint(0, nc-1)
+            c = random.randint(0, nr-1)
+            d = random.randint(0, nc-1)
+            if (a != c or b != d):
+                data1[a][b] = 2; data1[c][d] = 3
+                track, exist = wave_algorithm(data1, nr, nc)
+            if exist and abs(a - c) > nr//2 and abs(b - d) > nc//2 :
+                iteration = 1
+                break
+            if count == max_count:
+                break
+        data[a][b] = 2; data[c][d] = 3
+        if iteration:
+            break  
     # Вывод на экран карты.  
     global MAP; MAP = copy.deepcopy(data)
     global start_is_painted; start_is_painted = True
     global finish_is_painted; finish_is_painted = True
     global track_is_painted; track_is_painted = False
-    
+    root.entry_height.insert(0, str(nr))
+    root.entry_length.insert(0, str(nc))    
     array_to_grid()
     check_status_buttons()
 
