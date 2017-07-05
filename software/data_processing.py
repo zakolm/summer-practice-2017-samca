@@ -51,28 +51,35 @@ def wave_algorithm(field, nr, nc):
         exist = True
         track = [['-'] * nc for i in range(nr)]
         track[y][x] = '@'
+        
         # пока текущий уровень волны не станет равным начальному
-        while wave != start: 
+        # учитывается минимальное количество поворотов
+        while wave != start:
+            # движение вправо
             if way_back(field, nr, nc, y, x+1, wave):
-                wave = field[y][x+1]
-                track[y][x+1] = '@'
-                x += 1
-            
+                while way_back(field, nr, nc, y, x+1, wave):
+                    wave = field[y][x+1]
+                    track[y][x+1] = '@'
+                    x += 1
+            # движение вверх     
             if way_back(field, nr, nc, y-1, x, wave):
-                wave = field[y-1][x]
-                track[y-1][x] = '@'
-                y -= 1
-                
+                while way_back(field, nr, nc, y-1, x, wave):
+                    wave = field[y-1][x]
+                    track[y-1][x] = '@'
+                    y -= 1 
+            # движение влево     
             if way_back(field, nr, nc, y, x-1, wave):
-                wave = field[y][x - 1]
-                track[y][x-1] = '@'
-                x -= 1
-
+                while way_back(field, nr, nc, y, x-1, wave):
+                    wave = field[y][x - 1]
+                    track[y][x-1] = '@'
+                    x -= 1         
+            # движение вниз
             if way_back(field, nr, nc, y+1, x, wave):
-                wave = field[y+1][x]
-                track[y+1][x] = '@'
-                y += 1
-                
+                while way_back(field, nr, nc, y+1, x, wave):
+                    wave = field[y+1][x]
+                    track[y+1][x] = '@'
+                    y += 1
+                    
     return track, exist
 
 # определение свободного пути
@@ -100,19 +107,20 @@ def display(array):
         print()
     print()
 
-
 #------------------------------------------------------------------------------
 #-------------------------------------Создание команд--------------------------
 #------------------------------------------------------------------------------
+    
 def list_of_commands(track, nr, nc, start_i, start_j, finish_i, finish_j):
     commands = []
     i = start_i
     j = start_j
+    
     # пока не достигнем финиша
     track[i][j]= '-'
     while i != finish_i or j != finish_j:
         # движение вправо
-        if way_forward(track, nr, nc, i, j + 1):
+        if way_forward(track, nr, nc, i, j + 1): 
             while way_forward(track, nr, nc, i, j + 1):
                 commands.append(1)
                 track[i][j + 1] = '-'
