@@ -2,6 +2,7 @@ from tkinter import *
 import tkinter.messagebox as box
 from tkinter.filedialog import *
 import fileinput
+from random import *
 import random
 import copy
 
@@ -24,10 +25,9 @@ a = None
 # класс Робота 
 class Robot():
     # рисование начального состояния
-    def __init__(self, r, c, i, j): 
+    def __init__(self, r, c, i, j):
         self.r = r # номер сторки 
-        self.c = c # номер столбца 
-        self.color = "blueviolet" # базовый цвет
+        self.c = c # номер столбца
         if j == c + 1:
             self.turn_right()
         if i == r - 1:
@@ -36,11 +36,11 @@ class Robot():
             self.turn_left()
         if i == r + 1:
             self.turn_down()
-        self.paint()
+        self.start_orient = self.orient
+        self.paint("darkmagenta")
 
     # движение по нужному направлению
     def moves(self):
-        self.paint()
         if(bot.orient == "l"):
             self.c -= 1
             canv.move(self.trian, -cell_size, 0)
@@ -98,8 +98,8 @@ class Robot():
         self.y3 = self.y2
         self.x3 = self.x2 +  cell_size
 
-    def paint(self):
-        self.trian = canv.create_polygon([self.x1, self.y1], [self.x2, self.y2], [self.x3, self.y3], fill = self.color)
+    def paint(self, color = 'mediumpurple'):
+        self.trian = canv.create_polygon([self.x1, self.y1], [self.x2, self.y2], [self.x3, self.y3], fill = color)
 
 
 # класс одной клетки
@@ -189,7 +189,7 @@ def click_add_block(event):
         if a[row][column].color != "blue":
             if a[row][column].color == "limegreen":
                  start_is_painted = False
-            if a[row][column].color == "red":
+            if a[row][column].color == "orangered":
                  finish_is_painted = False    
             a[row][column].color = "blue"
         else:
@@ -213,15 +213,15 @@ def click_add_start(event):
     if click_in_grid == 2:
         if not start_is_painted:
             change_color(row, column, "limegreen", "white")
-            if a[row][column].color != "blue" and a[row][column].color != "red":
+            if a[row][column].color != "blue" and a[row][column].color != "orangered":
                 start_is_painted = True
             row_before_start = row
             column_before_start = column
         else:
-            if( a[row][column].color != "blue" and a[row][column].color != "red" and (row_before_start !=row or column_before_start != column)):
+            if( a[row][column].color != "blue" and a[row][column].color != "orangered" and (row_before_start !=row or column_before_start != column)):
                 a[row][column].color = "limegreen"
                 a[row][column].paint()
-                if(a[row_before_start][column_before_start].color != "blue" and a[row_before_start][column_before_start].color != "red"):
+                if(a[row_before_start][column_before_start].color != "blue" and a[row_before_start][column_before_start].color != "orangered"):
                     a[row_before_start][column_before_start].color = "white"
                     a[row_before_start][column_before_start].paint()
                     row_before_start = row
@@ -247,21 +247,21 @@ def click_add_finish(event):
     row, column, click_in_grid = find_col_row(x, y)
     if click_in_grid == 2:
         if not finish_is_painted:
-            change_color(row, column, "red", "white")
+            change_color(row, column, "orangered", "white")
             if a[row][column].color != "blue" and a[row][column].color != "limegreen":
                 finish_is_painted = True
             row_before_finish = row
             column_before_finish = column
         else:
             if( a[row][column].color != "blue" and a[row][column].color != "limegreen" and (row_before_finish != row or column_before_finish != column)):
-                a[row][column].color = "red"
+                a[row][column].color = "orangered"
                 a[row][column].paint()
                 if(a[row_before_finish][column_before_finish].color != "blue") and a[row_before_finish][column_before_finish].color != "limegreen":
                     a[row_before_finish][column_before_finish].color = "white"
                     a[row_before_finish][column_before_finish].paint()
                     row_before_finish = row
                     column_before_finish = column
-            elif a[row][column].color == "red":
+            elif a[row][column].color == "orangered":
                 a[row][column].color = "white"
                 a[row][column].paint()
                 finish_is_painted = False
@@ -301,7 +301,7 @@ def grid_to_array():
                 MAP[r][c] = 1
             if a[r][c].color == "limegreen":
                 MAP[r][c] = 2
-            if a[r][c].color == "red":
+            if a[r][c].color == "orangered":
                 MAP[r][c] = 3
     return MAP
 
@@ -323,6 +323,7 @@ def btn_load_map():
     global start_is_painted; start_is_painted = True
     global finish_is_painted; finish_is_painted = True
     global track_is_painted; track_is_painted = False
+    global a
     # очистка
     canv.delete("all")
     root.entry_height.delete(0, last = END)
@@ -350,6 +351,7 @@ def btn_load_map():
     else:
         start_is_painted = False
         finish_is_painted = False
+        a = None
     check_status_buttons()
 
 # преобразование матрицы в сетку
@@ -369,26 +371,30 @@ def array_to_grid():
                 row_before_start = r
                 column_before_start = c   
             if MAP[r][c] == 3:
-                a[r][c].color = "red"
+                a[r][c].color = "orangered"
                 row_before_finish = r
                 column_before_finish = c
             a[r][c].paint()
 
 # кнопка проложить путь
-def btn_do_track(event):
+def btn_do_track():
     global track_is_painted
+    global bot
+    check_track()
     field = grid_to_array()
     track, exist = wave_algorithm(field, nr, nc)
     if exist:
         for r in range(nr):
             for c in range(nc):
                 if track[r][c] == '@':
-                    if a[r][c].color != 'red' and a[r][c].color != 'limegreen':
+                    if a[r][c].color != 'orangered' and a[r][c].color != 'limegreen':
                         a[r][c].color = 'yellow'
                     a[r][c].paint()
+        if track_is_painted:
+            bot.delete()
         track_is_painted = True
         orient_i,  orient_j = starting_position_of_the_robot(track)
-        global bot; bot = Robot(row_before_start, column_before_start, orient_i, orient_j)
+        bot = Robot(row_before_start, column_before_start, orient_i, orient_j)
     else:
         box.showinfo("Ошибка", "Невозможно проложить путь. \nПуть полностью ограждён!")
     check_status_buttons()
@@ -421,8 +427,11 @@ def check_track():
         for r in range(nr):
             for c in range(nc):
                 if a[r][c].color == 'yellow':
-                    a[r][c].color = 'white'
-                    a[r][c].paint()
+                    a[r][c] = Cell(r, c)
+                if a[r][c].color == 'limegreen':
+                    a[r][c] = Cell(r, c)
+                    a[r][c].color = "limegreen"
+                a[r][c].paint()
         bot.delete()
     track_is_painted = False
     
@@ -464,6 +473,12 @@ def check_status_buttons():
         root.btn_back.config(state = NORMAL, bg = "dodgerblue")
         root.btn_right.config(state = NORMAL, bg = "dodgerblue")
         root.btn_left.config(state = NORMAL, bg = "dodgerblue")
+        if bot.r == row_before_start and bot.c == column_before_start and bot.orient == bot.start_orient:
+            root.btn_go.config(state = NORMAL, bg = "dodgerblue")
+            root.btn_stop.config(state = NORMAL, bg = "dodgerblue")
+        else:
+            root.btn_go.config(state = DISABLED, bg = "lavender")
+            root.btn_stop.config(state = DISABLED, bg = "lavender")            
     else:
         root.btn_go.config(state = DISABLED, bg = "lavender")
         root.btn_stop.config(state = DISABLED, bg = "lavender")
@@ -471,6 +486,7 @@ def check_status_buttons():
         root.btn_back.config(state = DISABLED, bg = "lavender")
         root.btn_right.config(state = DISABLED, bg = "lavender")
         root.btn_left.config(state = DISABLED, bg = "lavender")
+    
         
 # вывод матрицы
 def display(array):
@@ -483,29 +499,81 @@ def display(array):
 
 # кнопка сгенерировать карту.  
 def  btn_generate_map():
+    global row_before_start
+    global column_before_start
+    global row_before_finish
+    global column_before_finish
+    global nr, nc
+    global MAP
     # очистка.  
     canv.delete("all")
     root.entry_height.delete(0, last = END)
     root.entry_length.delete(0, last = END)
     # заполнение карты рандомно.  
     exist = False
-    global nr, nc;
-    nr = random.randint(4,11); nc = random.randint(4,19)
+    nr = random.randint(5,11)
+    nc = random.randint(5,19)
+
+    # закоментирован долгий цикл
+    ''' 
+    distance = 1
+    MAP = [[0] * nc for r in range(nr)]
+    
+    row_before_start = 0
+    column_before_start = 1     
+    row_before_finish = 1
+    column_before_finish = 0
+   
+    while True:
+        print(exist, distance)
+        if exist and distance > nr * nc / 4:
+            break
+        
+        #MAP[row_before_start][column_before_start] = 0
+        #MAP[row_before_finish][column_before_finish] = 0
+        distance = 1
+        for i in range(nr):
+            for j in range(nc):
+                MAP[i][j] = randint(0, 1)
+        
+        row_before_start = randint(0, nr - 1)
+        column_before_start = randint(0, nc - 1)
+        
+        row_before_finish = randint(0, nr - 1)
+        column_before_finish = randint(0, nc - 1)
+        
+        MAP[row_before_start][column_before_start] = 2
+        MAP[row_before_finish][column_before_finish] = 3
+        display(MAP)
+        track, exist = wave_algorithm(MAP, nr, nc)
+        
+        if exist:
+            display(track)
+            for i in range(nr):
+                for j in range(nc):
+                    if track[i][j] == '@':
+                        distance += 1
+            
+    array_to_grid()
+    check_status_buttons()
+'''                 
+    nr = random.randint(5,11)
+    nc = random.randint(5,19)
     data = [random.choice((0, 1)) for _ in range(nc*nr)]
     data[:] = [data[i:i + nc] for i in range(0, nc*nr, nc)]
     #points = []#[0 for i in range(4)]
     #print(nr,nc,'\n',data)
     while (not exist):
         data1 = copy.deepcopy(data)
-        a = random.randint(0,nr-1)
-        b = random.randint(0,nc-1)
-        c = random.randint(0,nr-1)
-        d = random.randint(0,nc-1)
+        a = random.randint(0, nr-1)
+        b = random.randint(0, nc-1)
+        c = random.randint(0, nr-1)
+        d = random.randint(0, nc-1)
         if (a != c or b != d):
             data1[a][b] = 2; data1[c][d] = 3
             track, exist = wave_algorithm(data1, nr, nc)
     data[a][b] = 2; data[c][d] = 3
-    # Не знаю почему с массивом не работает. Потом еще посмотреть!  
+    # Не знаю почему с массивом не работает. Потом еще посмотреть! 
     '''for i in range(4):
             if i%2:
                 points.append(random.randint(0,nc-1))
@@ -515,11 +583,13 @@ def  btn_generate_map():
         data1[points[0]][points[1]] = 2; data1[points[2]][points[3]] = 3
         track, exist = algorithm_lee(data1, nr, nc)
     data[points[0]][points[1]] = 2; data[points[2]][points[3]] = 3'''
+    
     # Вывод на экран карты.  
     global MAP; MAP = copy.deepcopy(data)
     global start_is_painted; start_is_painted = True
     global finish_is_painted; finish_is_painted = True
     global track_is_painted; track_is_painted = False
+    
     array_to_grid()
     check_status_buttons()
 
@@ -537,38 +607,54 @@ def btn_start_moving():
     # составляем команды
     track, exist = wave_algorithm(field, nr, nc)
     commands = list_of_commands(track, nr, nc, row_before_start, column_before_start, row_before_finish, column_before_finish)
-    root.text_status.insert(1.0, array_of_int_to_string(commands))
+    input_to_status(commands)
 
     # прокладываем путь по командам
     for h in commands:
+        bot.paint()
         if h == 1:
+            bot.paint()
             bot.moves()
-        # 2 - вправо для робота
-        if h == 2:                             
+        # 2 - право для робота
+        else:
             bot.delete()
-            if bot.orient == "u":
-                bot.turn_right()
-            elif bot.orient == "d":
-                bot.turn_left()
-            elif bot.orient == "l":
-                bot.turn_up()
-            else:
-                bot.turn_down()
-            bot.paint()
-        #3 - влево для робота
-        if h == 3:                            
-            bot.delete()
-            if bot.orient == "u":
-                bot.turn_left()
-            elif bot.orient == "d":
-                bot.turn_right()
-            elif bot.orient == "l":
-                bot.turn_down()
-            else:
-                bot.turn_up()
-            bot.paint()
+            if h == 2:                             
+                if bot.orient == "u":
+                    bot.turn_right()
+                elif bot.orient == "d":
+                    bot.turn_left()
+                elif bot.orient == "l":
+                    bot.turn_up()
+                else:
+                    bot.turn_down()
+            # 3 - лево для робота
+            if h == 3:                            
+                if bot.orient == "u":
+                    bot.turn_left()
+                elif bot.orient == "d":
+                    bot.turn_right()
+                elif bot.orient == "l":
+                    bot.turn_down()
+                else:
+                    bot.turn_up()
+            bot.paint("mediumpurple")
+        bot.delete()
+    bot.paint("darkmagenta")
+    check_status_buttons()
     canv.bind('<Button-1>', pass_click)
-
+    
+def input_to_status(commands):
+    root.text_status.delete(0.0, END)
+    d = 0 
+    for h in commands:
+        d += 1
+        if h == 1:
+            root.text_status.insert(END, '{:>3} '.format(str(d))  + chr(708) +" прямо \n")
+        elif h == 2:
+            root.text_status.insert(END, '{:>3} '.format(str(d)) + chr(707) +" поворот направо\n")
+        else:
+            root.text_status.insert(END, '{:>3} '.format(str(d)) + chr(706)+ " поворот налево \n")
+            
 # кнопка стоп
 def btn_stop_moving():
     pass
@@ -578,28 +664,37 @@ def btn_move_forward():
     bot.delete()
     bot.turn_up()
     bot.moves()
+    bot.paint("darkmagenta")
+    check_status_buttons()
 
 # кнопка назад(вниз по карте)  
 def btn_move_back():
     bot.delete()
     bot.turn_down()
     bot.moves()
+    bot.paint("darkmagenta")
+    check_status_buttons()
 
 # кнопка вправо
 def btn_turn_right():
     bot.delete()
     bot.turn_right()
     bot.moves()
+    bot.paint("darkmagenta")
+    check_status_buttons()
     
 # кнопка влево
 def btn_turn_left():
     bot.delete()
     bot.turn_left()
     bot.moves()
-
+    bot.paint("darkmagenta")
+    check_status_buttons()
+    
 # горячая клавиша - выход из программы
 def exit_(event):
-    root.destroy()    
+    root.destroy()
+    
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~Расположение элементов~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -614,10 +709,8 @@ root.resizable(width=False, height=False)
 root.bind('<Escape>',exit_)
 
 # кнопка проложить путь
-root.btn_track = Button(root, text = 'Проложить путь', width = 13, height = 3, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12')#, command = btn_do_track)
+root.btn_track = Button(root, text = 'Проложить путь', width = 13, height = 3, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_do_track)
 root.btn_track.place(x = 30, y = 20)
-root.btn_track.bind("<Button>",btn_do_track, "+")
-#root.btn_track.bind("<Return>",btn_do_track, "+")
 
 # метка высоты
 root.lbl_height = Label(root, text = "Высота", font = 'arial 10')
