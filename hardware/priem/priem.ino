@@ -13,7 +13,7 @@ RF24 radio(9, 10); // "создать" модуль на пинах 9 и 10 Дл
 //RF24 radio(9,53); // для Меги
 
 byte address[][6] = {"1Node", "2Node", "3Node", "4Node", "5Node", "6Node"}; //возможные номера труб
-String in_data = "";
+String programm = "";
 void setup() {
   Serial.begin(9600); //открываем порт для связи с ПК
 
@@ -36,26 +36,29 @@ void setup() {
   radio.startListening();  //слушаем радиоэфир, мы передатчик
 }
 
-void transmit()
+void move_bot()
 {
-   if (Serial.available()>0)
-  {
-    byte chr=Serial.read();
-    if(chr=='t')
-      Serial.println("t");
-    else
-      radio.write(&chr, sizeof(chr));
-  }
+   Serial.println(programm);
 }
+
 
 void loop() 
 {
-   byte pipeNo, gotByte;
+   byte pipeNo; 
+   char gotByte;
    transmit();                          
    while( radio.available(&pipeNo))  // слушаем эфир со всех труб
    {  
       radio.read( &gotByte, sizeof(gotByte) );         // чиатем входящий сигнал
       Serial.println(gotByte);
+      if (gotByte!='4')
+      {
+        programm+=gotByte;
+        if (gotByte=='0')
+          move_bot()  
+      }
+      else
+      Serial.println("Stop")
    }
   delay(100);
 }
