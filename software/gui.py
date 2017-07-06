@@ -7,6 +7,7 @@ import random
 import copy
 
 from data_processing import *
+from communication import *
 
 cell_size = 34 # размер клетки
 
@@ -469,8 +470,7 @@ def check_status_buttons():
     if track_is_painted:
         root.btn_go.config(state = NORMAL, bg = "dodgerblue")
         root.btn_stop.config(state = NORMAL, bg = "dodgerblue")
-        root.btn_forward.config(state = NORMAL, bg = "dodgerblue")
-        root.btn_back.config(state = NORMAL, bg = "dodgerblue")
+        root.btn_move.config(state = NORMAL, bg = "dodgerblue")
         root.btn_right.config(state = NORMAL, bg = "dodgerblue")
         root.btn_left.config(state = NORMAL, bg = "dodgerblue")
         if bot.r == row_before_start and bot.c == column_before_start and bot.orient == bot.start_orient:
@@ -482,8 +482,7 @@ def check_status_buttons():
     else:
         root.btn_go.config(state = DISABLED, bg = "lavender")
         root.btn_stop.config(state = DISABLED, bg = "lavender")
-        root.btn_forward.config(state = DISABLED, bg = "lavender")
-        root.btn_back.config(state = DISABLED, bg = "lavender")
+        root.btn_move.config(state = DISABLED, bg = "lavender")
         root.btn_right.config(state = DISABLED, bg = "lavender")
         root.btn_left.config(state = DISABLED, bg = "lavender")
     
@@ -554,16 +553,99 @@ def array_of_int_to_string(array):
         string += str(array[i]) + ' '
     return string
 
+    
+def input_to_status(commands):
+    root.text_status.delete(0.0, END)
+    d = 0 
+    for h in commands:
+        d += 1
+        if h == '1':
+            root.text_status.insert(END, '{:>3} '.format(str(d))  + chr(708) +" прямо \n")
+        elif h == "2":
+            root.text_status.insert(END, '{:>3} '.format(str(d)) + chr(707) +" поворот направо\n")
+        else:
+            root.text_status.insert(END, '{:>3} '.format(str(d)) + chr(706)+ " поворот налево \n")
+           
+# кнопка стоп
+def btn_stop_moving():
+    pass
+        
+# кнопка движение робота 
+def btn_move_bot():
+    bot.delete()
+    bot.moves()
+    bot.paint("darkmagenta")
+    
+    path ="10"
+    t = threading.Thread(target=transmitt, args=(path,))
+    t.daemon = True
+    t.start()
+    
+    check_status_buttons()
+
+# кнопка вправо
+def btn_turn_right():
+    bot.delete()
+    if bot.orient == "u":
+        bot.turn_right()
+    elif bot.orient == "d":
+        bot.turn_left()
+    elif bot.orient == "l":
+        bot.turn_up()
+    else:
+        bot.turn_down()
+    bot.paint("darkmagenta")
+    
+    path ="20"
+    t = threading.Thread(target = transmitt, args=(path,))
+    t.daemon = True
+    t.start()
+    
+    check_status_buttons()
+    
+# кнопка влево
+def btn_turn_left():
+    bot.delete()
+    if bot.orient == "u":
+        bot.turn_left()
+    elif bot.orient == "d":
+        bot.turn_right()
+    elif bot.orient == "l":
+        bot.turn_down()
+    else:
+        bot.turn_up()
+    bot.paint("darkmagenta")
+
+    #~~~~~~~~~~~~Связь~~~~~~~~~~~
+    path ="30"
+    t = threading.Thread(target=transmitt, args=(path,))
+    t.daemon = True
+    t.start()
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    
+    check_status_buttons()
+
+
 # кнопка старт
 def btn_start_moving():
     # преобразуем нарисованное в матрицу
     field = grid_to_array()
     # составляем команды
     track, exist = wave_algorithm(field, nr, nc)
-    commands = list_of_commands(track, nr, nc, row_before_start, column_before_start, row_before_finish, column_before_finish)
-    input_to_status(commands)
+    path = list_of_commands(track, nr, nc, row_before_start, column_before_start, row_before_finish, column_before_finish)
+    input_to_status(path)
+    path += '0'
 
-    # прокладываем путь по командам
+    #~~~~~~~~~~~~Связь~~~~~~~~~~~
+    # transmitt_start отдельно для отрисовки пройденного пути
+    t = threading.Thread(target=transmitt_start, args=(path,))
+    t.daemon = True
+    t.start()
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    # код до трансмита
+    '''
+5    # прокладываем путь по командам
     for h in commands:
         bot.paint()
         if h == 1:
@@ -594,57 +676,57 @@ def btn_start_moving():
             bot.paint("mediumpurple")
         bot.delete()
     bot.paint("darkmagenta")
+
     check_status_buttons()
     canv.bind('<Button-1>', pass_click)
-    
-def input_to_status(commands):
-    root.text_status.delete(0.0, END)
-    d = 0 
-    for h in commands:
-        d += 1
-        if h == 1:
-            root.text_status.insert(END, '{:>3} '.format(str(d))  + chr(708) +" прямо \n")
-        elif h == 2:
-            root.text_status.insert(END, '{:>3} '.format(str(d)) + chr(707) +" поворот направо\n")
-        else:
-            root.text_status.insert(END, '{:>3} '.format(str(d)) + chr(706)+ " поворот налево \n")
-            
-# кнопка стоп
-def btn_stop_moving():
-    pass
+    '''
 
-# кнопка вперед
-def btn_move_forward():
-    bot.delete()
-    bot.turn_up()
-    bot.moves()
-    bot.paint("darkmagenta")
-    check_status_buttons()
+def transmitt_start(path):
+    s=''
+    ser = connect()
+    if ser!=None:
+        ser.open()
+        ser.write(path.encode('utf-8'))
+        ser.close()
+        while reading:
+            bot.paint()
+            ser.open()
+            s=ser.read().decode('utf-8')
+            if (s=='1'):
+                bot.paint()
+                bot.moves()
+                print(1)
+                #пройти вперед
+            else:
+                bot.delete()
+                if (s=='2'):
+                    if bot.orient == "u":
+                        bot.turn_right()
+                    elif bot.orient == "d":
+                        bot.turn_left()
+                    elif bot.orient == "l":
+                        bot.turn_up()
+                    else:
+                        bot.turn_down()
+                    print(2)
+                if (s=='3'):
+                    if bot.orient == "u":
+                        bot.turn_left()
+                    elif bot.orient == "d":
+                        bot.turn_right()
+                    elif bot.orient == "l":
+                        bot.turn_down()
+                    else:
+                        bot.turn_up()
+                    print(3)
+                bot.paint("mediumpurple")
+            bot.delete()
+            ser.close()
+        bot.paint("darkmagenta")
+    else:
+        print("Not connected")
+        
 
-# кнопка назад(вниз по карте)  
-def btn_move_back():
-    bot.delete()
-    bot.turn_down()
-    bot.moves()
-    bot.paint("darkmagenta")
-    check_status_buttons()
-
-# кнопка вправо
-def btn_turn_right():
-    bot.delete()
-    bot.turn_right()
-    bot.moves()
-    bot.paint("darkmagenta")
-    check_status_buttons()
-    
-# кнопка влево
-def btn_turn_left():
-    bot.delete()
-    bot.turn_left()
-    bot.moves()
-    bot.paint("darkmagenta")
-    check_status_buttons()
-    
 # горячая клавиша - выход из программы
 def exit_(event):
     root.destroy()
@@ -652,103 +734,99 @@ def exit_(event):
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~Расположение элементов~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        
-root = Tk()
+if __name__ ==  "__main__":        
+    root = Tk()
 
-root.title("Guide robot")
-root.geometry('1000x600')
-root.resizable(width=False, height=False)
+    root.title("Guide robot")
+    root.geometry('1000x600')
+    root.resizable(width=False, height=False)
 
-# горячая клавиша - выход
-root.bind('<Escape>',exit_)
+    # горячая клавиша - выход
+    root.bind('<Escape>',exit_)
 
-# кнопка проложить путь
-root.btn_track = Button(root, text = 'Проложить путь', width = 13, height = 3, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_do_track)
-root.btn_track.place(x = 30, y = 20)
+    # кнопка проложить путь
+    root.btn_track = Button(root, text = 'Проложить путь', width = 13, height = 3, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_do_track)
+    root.btn_track.place(x = 30, y = 20)
 
-# метка высоты
-root.lbl_height = Label(root, text = "Высота", font = 'arial 10')
-root.lbl_height.place(x = 200, y = 60)
+    # метка высоты
+    root.lbl_height = Label(root, text = "Высота", font = 'arial 10')
+    root.lbl_height.place(x = 200, y = 60)
 
-# поле высоты 
-root.entry_height = Entry(root, width = 6)
-root.entry_height.place(x = 255, y = 63)
+    # поле высоты 
+    root.entry_height = Entry(root, width = 6)
+    root.entry_height.place(x = 255, y = 63)
 
-# метка длины
-root.lbl_length = Label(root, text = "Длина", font = 'arial 10')
-root.lbl_length.place(x = 317, y = 60)
+    # метка длины
+    root.lbl_length = Label(root, text = "Длина", font = 'arial 10')
+    root.lbl_length.place(x = 317, y = 60)
 
-# поле длины
-root.entry_length = Entry(root,  width = 6)
-root.entry_length.place(x = 365, y = 63)
+    # поле длины
+    root.entry_length = Entry(root,  width = 6)
+    root.entry_length.place(x = 365, y = 63)
 
-# кнопка создать новую карту
-root.btn_new_map = Button(root, text = "Создать новую карту", width = 22, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_create_grid)
-root.btn_new_map.place(x = 200, y = 20)
+    # кнопка создать новую карту
+    root.btn_new_map = Button(root, text = "Создать новую карту", width = 22, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_create_grid)
+    root.btn_new_map.place(x = 200, y = 20)
 
-# кнопка указать начало
-root.btn_start = Button(root, text = "Указать\n начало", width = 8, height = 2, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 9', command = btn_add_start)
-root.btn_start.place(x = 200, y = 90)
+    # кнопка указать начало
+    root.btn_start = Button(root, text = "Указать\n начало", width = 8, height = 2, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 9', command = btn_add_start)
+    root.btn_start.place(x = 200, y = 90)
 
-# кнопка указать конец
-root.btn_finish = Button(root, text = "Указать\n конец", width = 8, height = 2, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 9', command = btn_add_finish)
-root.btn_finish.place(x = 270, y = 90)
+    # кнопка указать конец
+    root.btn_finish = Button(root, text = "Указать\n конец", width = 8, height = 2, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 9', command = btn_add_finish)
+    root.btn_finish.place(x = 270, y = 90)
 
-# кнопка добавить преграду
-root.btn_border = Button(root, text = "Добавить\n преграду", width = 8, height = 2, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 9', command = btn_add_block)
-root.btn_border.place(x = 340, y = 90)
+    # кнопка добавить преграду
+    root.btn_border = Button(root, text = "Добавить\n преграду", width = 8, height = 2, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 9', command = btn_add_block)
+    root.btn_border.place(x = 340, y = 90)
 
-# кнопка сохранить карту
-root.btn_save = Button(root, text = "Сохранить карту", width = 15, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 9', command = btn_save_map)
-root.btn_save.place(x = 200, y = 135)
+    # кнопка сохранить карту
+    root.btn_save = Button(root, text = "Сохранить карту", width = 15, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 9', command = btn_save_map)
+    root.btn_save.place(x = 200, y = 135)
 
-# кнопка загрузить карту
-root.btn_take_map = Button(root, text = "Загрузить карту", width = 22, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_load_map)
-root.btn_take_map.place(x = 450, y = 20)
+    # кнопка загрузить карту
+    root.btn_take_map = Button(root, text = "Загрузить карту", width = 22, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_load_map)
+    root.btn_take_map.place(x = 450, y = 20)
 
-# кнопка сгенерировать карту
-root.btn_generate = Button(root, text = "Сгенерировать карту", width = 22, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_generate_map)
-root.btn_generate.place(x = 450, y = 60)
+    # кнопка сгенерировать карту
+    root.btn_generate = Button(root, text = "Сгенерировать карту", width = 22, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_generate_map)
+    root.btn_generate.place(x = 450, y = 60)
 
-# метка статус
-root.lbl_status = Label(root, text = "Статус", font = 'arial 14')
-root.lbl_status.place(x = 800, y = 20)
+    # метка статус
+    root.lbl_status = Label(root, text = "Статус", font = 'arial 14')
+    root.lbl_status.place(x = 800, y = 20)
 
-# поле статуса
-root.text_status = Text(root, height = 15, width = 25, font = 'Arial 14', wrap = WORD)
-root.text_status.place(x = 700, y = 60)
+    # поле статуса
+    root.text_status = Text(root, height = 15, width = 25, font = 'Arial 14', wrap = WORD)
+    root.text_status.place(x = 700, y = 60)
 
-# кнопка вперёд
-root.btn_forward = Button(root, width = 4, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_move_forward)
-root.btn_forward.place(x = 815, y = 430)
+    # кнопка движение
+    root.btn_move = Button(root, width = 4, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_move_bot)
+    root.btn_move.place(x = 815, y = 465)
 
-# кнопка назад
-root.btn_back = Button(root, width = 4, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_move_back)
-root.btn_back.place(x = 815, y = 465)
+    # кнопка направо
+    root.btn_right = Button(root, width = 4, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_turn_right)
+    root.btn_right.place(x = 864, y = 465)
 
-# кнопка направо
-root.btn_right = Button(root, width = 4, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_turn_right)
-root.btn_right.place(x = 864, y = 465)
+    # кнопка налево
+    root.btn_left = Button(root, width = 4, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_turn_left)
+    root.btn_left.place(x = 766, y = 465)
 
-# кнопка налево
-root.btn_left = Button(root, width = 4, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_turn_left)
-root.btn_left.place(x = 766, y = 465)
+    # кнопка старт
+    root.btn_go = Button(root, text = "Старт", width = 9, height = 2, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_start_moving)
+    root.btn_go.place(x = 745, y = 520)
 
-# кнопка старт
-root.btn_go = Button(root, text = "Старт", width = 9, height = 2, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_start_moving)
-root.btn_go.place(x = 745, y = 520)
+    # кнопка стоп
+    root.btn_stop = Button(root, text = "Стоп", width = 9, height = 2, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_stop_moving)
+    root.btn_stop.place(x = 845, y = 520)
 
-# кнопка стоп
-root.btn_stop = Button(root, text = "Стоп", width = 9, height = 2, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_stop_moving)
-root.btn_stop.place(x = 845, y = 520)
+    # холст
+    canv = Canvas(root, width = 650, height = 380,  bd = 0, relief = "ridge")
+    canv.place(x = 20, y = 190)
 
-# холст
-canv = Canvas(root, width = 650, height = 380,  bd = 0, relief = "ridge")
-canv.place(x = 20, y = 190)
+    # начальный статус кнопок
+    check_status_buttons()
 
-# начальный статус кнопок
-check_status_buttons()
-
-# запускаем событийный цикл
-root.mainloop()
+    # запускаем событийный цикл
+    root.mainloop()
 

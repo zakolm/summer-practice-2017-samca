@@ -25,7 +25,7 @@ def connect():
     else:
         return None
 
-def transmitt(name,path):
+def transmitt(path):
     s=''
     ser = connect()
     if ser!=None:
@@ -45,8 +45,9 @@ def transmitt(name,path):
             ser.close()
     else:
         print("Not connected")
-path='12312313230'
-t = threading.Thread(target=transmitt, args=('COM4',path,))
-t.daemon = True
-t.start()
+        
+#path ="1230"
+#t = threading.Thread(target=transmitt, args=(path,))
+#t.daemon = True
+#t.start()
 
