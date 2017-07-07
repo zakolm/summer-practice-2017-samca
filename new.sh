@@ -5,4 +5,3 @@ if [ ! -f file_1.txt ]
 fi
 python3 main.py
 diff -s -q -w f_out.txt out1.txt
-done
