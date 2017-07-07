@@ -8,3 +8,5 @@ https://docs.google.com/presentation/d/1P78XQ6fbRG0ZdoFWUro2YqboAdSx6r6WZsA6UFDV
 
 презентация 2
 https://docs.google.com/presentation/d/1ezlE-ByMi1Q1jUzZdA0wRsu301o1Ke2sk7VbDM2vmT4/edit?usp=sharing
+
+Ссылка на демонстрацию работы графического интерфейса https://youtu.be/GRUjM4jQ5-Y 
