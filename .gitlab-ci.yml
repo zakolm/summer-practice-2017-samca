@@ -10,10 +10,6 @@ compile:
   - apt-get install -y python3-dev python-pip
   - python3 algorithm_lee.py
  
- test:
+test:
   stage: test
-  script:
-  - export DATABASE_URL=postgres://postgres:@postgres:5432/python-test-app
-  - apt-get update -qy
-  - apt-get install -y python3-dev python-pip
-  - new.sh
+  script: "sh /iu7-bachelors-2020-summer-practice-2017-samca/tester/new.sh"
