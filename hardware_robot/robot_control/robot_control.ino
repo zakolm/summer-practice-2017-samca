@@ -3,7 +3,10 @@
  * Arduino робот-гид, 2 колесный, с платой управления моторами, ультразвуковой измеритель расстояния
  * SAMCA
  */
-#define VERSION "RobotGuide2W ver.2017.00.00.01.01" 
+#define VERSION "RobotGuide2W ver.2017.00.00.05.01" 
+void streight();
+void right();
+void left();
  /*
  * Виды поворотов.
  */
@@ -12,6 +15,13 @@
 #define RIGHT_STEP 2
 #define LEFT_STEP 3
 int step_robot;
+/*
+ * Пины для датчика расстояния
+ * и пин звукового сигнала
+ */
+ int echoPin = 9;
+ int trigPin = 8;
+ int buzzer = 10;
 /*
  * Задержки для езды, поворотов на месте и плавных поворотов.
  * Подбираются экспериментально.
@@ -23,18 +33,18 @@ const int DELAY_ROTATE = 500;
 const int DELAY_TURN = 500;
 const int DELAY_TURN_BACK = 500;
 /* Пины для подключения двигателя L298N 
- * 9, 6 цифровые пины для регулировки скорости.
- * 14, 15, 16, 17 аналоговые пины A0, A1, A2 и A3 соответственно, для подключения к мотору.
+ * 44, 45 цифровые пины для регулировки скорости.
+ * 46, 47, 48, 49 для подключения к мотору.
  */
 // Первый двигатель.  
-int inA = 14;
-int inB = 15;
+int inA = 46;
+int inB = 47;
 // Второй двигатель.  
-int inC = 16;
-int inD = 17;
+int inC = 48;
+int inD = 49;
 // Подключение пинов скорости.  
-int EN1 = 9; // первый двигатель.
-int EN2 = 6; // второй двигатель.
+int EN1 = 44; // первый двигатель.
+int EN2 = 45; // второй двигатель.
 /* Пины для подключения датчика скорости двигателя Q86(энкодеры)
  * 2, 3 специальные пины для работы с "внешним прерыванием"
  */
@@ -80,6 +90,12 @@ void counter_left(){
 ******************************************/
 // Инициализируем все пины для управления двигателями как outputs.  
 void setup() {
+  /*
+   * Подключениедатчика расстояния
+   */
+  pinMode(buzzer, OUTPUT);
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
   /* 
    * некоторые переменные необходимо инициализировать именно здесь. 
    * Я из будущего: "Просто прими это как данность!"
@@ -104,15 +120,24 @@ void setup() {
 }
 
 void loop() {
+  /*
   Serial.print(pulses_left);
   Serial.print(' ');
   Serial.print(pulses_right);
   Serial.print(' ');
   Serial.println(test);
   if ( !step_robot ) left(); 
-  
-  /*Serial.println("\n*** new loop() start ***\n");
-  //Serial.print("%d", i);
+  */
+  if ( ultra() <= 5 ){
+    while(ultra() <= 5){
+    stop_robot;
+    digitalWrite(buzzer, HIGH);
+    }
+  }
+  else{
+    digitalWrite(buzzer, LOW);
+  }
+  Serial.println("\n*** new loop() start ***\n");
   int step_robot = 0;
   if ( i < count ){
     step_robot = a[i];
@@ -131,20 +156,9 @@ void loop() {
         break;
     }
     i++;
-    stop_robot();*/
+    stop_robot();
     
-  //}
-  //-------------------------
-  /*
-  analogWrite(EN1, 255);
-  analogWrite(EN2, 200);
-  digitalWrite(inA, HIGH);
-  //digitalWrite(inB, LOW);
-  //digitalWrite(inC, LOW);
-  digitalWrite(inD, HIGH);
-  */
-  //-------------------------
-  
+  }
 }
 //-------------------------------------------------------------------------------------------//
 /******************************************
@@ -192,3 +206,15 @@ void stop_robot(){
   digitalWrite(inC, LOW);
   digitalWrite(inD, LOW);
 }
+int ultra(){
+  int duration, cm;
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+  duration = pulseIn(echoPin, HIGH);
+  cm = duration / 58;
+  return cm;
+}
+
