@@ -12,4 +12,4 @@ compile:
  
 test:
   stage: test
-  script: sh /iu7-bachelors-2020-summer-practice-2017-samca/new.sh
+  script: sh ./new.sh
