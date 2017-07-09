@@ -135,6 +135,7 @@ def btn_create_grid():
     # считываем размеры
     length = root.entry_length.get()
     height = root.entry_height.get()
+    root.text_status.delete(0.0, END)
     # исключения
     nr = height
     nc = length
@@ -177,6 +178,7 @@ def btn_create_grid():
 # кнопка добавить преграду
 def btn_add_block():
     check_track()
+    root.text_status.delete(0.0, END)
     check_status_buttons()
     canv.bind('<Button-1>', click_add_block)
 
@@ -201,6 +203,7 @@ def click_add_block(event):
 # кнопка указать начало
 def btn_add_start():
     check_track()
+    root.text_status.delete(0.0, END)
     check_status_buttons()
     canv.bind("<Button-1>", click_add_start)
 
@@ -236,6 +239,7 @@ def click_add_start(event):
 # кнопка указать конец
 def btn_add_finish():
     check_track()
+    root.text_status.delete(0.0, END)
     check_status_buttons()
     canv.bind("<Button-1>", click_add_finish)
     
@@ -353,6 +357,7 @@ def btn_load_map():
         start_is_painted = False
         finish_is_painted = False
         a = None
+    root.text_status.delete(0.0, END)
     check_status_buttons()
 
 # преобразование матрицы в сетку
@@ -508,6 +513,7 @@ def  btn_generate_map():
     canv.delete("all")
     root.entry_height.delete(0, last = END)
     root.entry_length.delete(0, last = END)
+    root.text_status.delete(0.0, END)
     # заполнение карты рандомно.
     iteration = 0
     max_count = 10
@@ -801,15 +807,15 @@ if __name__ ==  "__main__":
     root.text_status.place(x = 700, y = 60)
 
     # кнопка движение
-    root.btn_move = Button(root, width = 4, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_move_bot)
+    root.btn_move = Button(root, text = chr(708), width = 4, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_move_bot)
     root.btn_move.place(x = 815, y = 465)
 
     # кнопка направо
-    root.btn_right = Button(root, width = 4, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_turn_right)
+    root.btn_right = Button(root, text = chr(707),  width = 4, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_turn_right)
     root.btn_right.place(x = 864, y = 465)
 
     # кнопка налево
-    root.btn_left = Button(root, width = 4, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_turn_left)
+    root.btn_left = Button(root, text = chr(706), width = 4, height = 1, bg = 'dodgerblue', fg = 'aliceblue', font = 'arial 12', command = btn_turn_left)
     root.btn_left.place(x = 766, y = 465)
 
     # кнопка старт
