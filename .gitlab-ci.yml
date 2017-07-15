@@ -1,4 +1,4 @@
-test:
+compile:
   script:
   - export DATABASE_URL=postgres://postgres:@postgres:5432/python-test-app
   - apt-get update -qy
