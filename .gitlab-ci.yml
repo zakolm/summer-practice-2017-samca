@@ -3,4 +3,4 @@ test:
   - export DATABASE_URL=postgres://postgres:@postgres:5432/python-test-app
   - apt-get update -qy
   - apt-get install -y python3-dev python-pip
-  - python3 algorithm_lee.py
+  - python3 ./software/data_processing.py
